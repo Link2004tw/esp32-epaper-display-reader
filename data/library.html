@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Library - E-Reader</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --surface: #faf7f2;
+        --border: #d6cfc2;
+        --border-strong: #b8ae9e;
+        --text: #2c2416;
+        --text-muted: #7a6e5f;
+        --accent: #8b4513;
+        --accent-light: #f0e6d8;
+        --accent-hover: #6e360f;
+        --ink: #1a1206;
+        --success: #2a7a2a;
+        --success-hover: #1f5c1f;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --text: #e0dcd4;
+        --text-muted: #8a8578;
+        --accent: #c8a46e;
+        --accent-light: #3a3228;
+        --accent-hover: #d4b88a;
+        --ink: #f0ebe0;
+        --success: #4a9a4a;
+        --success-hover: #5ab85a;
+      }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 27px,
+          rgba(180, 160, 120, 0.12) 27px,
+          rgba(180, 160, 120, 0.12) 28px
+        );
+      }
+      [data-theme="dark"] body {
+        background-image: none;
+      }
+      .page {
+        width: 100%;
+        max-width: 600px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .book-icon {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 0.75rem;
+        display: block;
+      }
+      h1 {
+        font-size: 1.7rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      .subtitle {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1.75rem;
+        box-shadow:
+          0 2px 8px rgba(44, 36, 22, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+        margin-bottom: 1.25rem;
+      }
+      [data-theme="dark"] .card {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #c8a46e, #8b5e3c, #c8a46e);
+        border-radius: 4px 0 0 4px;
+      }
+      .section-label {
+        display: block;
+        font-size: 0.68rem;
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+      }
+      .book-list {
+        list-style: none;
+      }
+      .book-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+        padding: 0.9rem 0.6rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        align-items: center;
+      }
+      .book-item:last-child {
+        border-bottom: none;
+      }
+      .book-item:hover {
+        background: var(--accent-light);
+      }
+      .book-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+      }
+      .book-name {
+        color: var(--ink);
+        font-weight: 500;
+        word-break: break-all;
+      }
+      .book-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.72rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+      .book-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .progress-bar {
+        width: 60px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .book-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .btn-download {
+        font-family: monospace;
+        font-size: 0.72rem;
+        padding: 0.35rem 0.7rem;
+        background: var(--success);
+        color: #fff;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+      .btn-download:hover {
+        background: var(--success-hover);
+      }
+      .btn-download:active {
+        transform: scale(0.97);
+      }
+      .empty-note {
+        padding: 0.75rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+        font-size: 0.85rem;
+      }
+      .nav-links {
+        text-align: center;
+        margin-top: 0.5rem;
+      }
+      .nav-links a {
+        font-size: 0.78rem;
+        font-family: monospace;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+      footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+      .count-badge {
+        display: inline-block;
+        background: var(--accent-light);
+        color: var(--accent);
+        font-size: 0.65rem;
+        font-family: monospace;
+        padding: 0.15rem 0.4rem;
+        border-radius: 10px;
+        margin-left: 0.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <svg
+          class="book-icon"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="6"
+            y="6"
+            width="28"
+            height="36"
+            rx="2"
+            fill="#c8a46e"
+            stroke="#8b5e3c"
+            stroke-width="1.5"
+          />
+          <rect
+            x="10"
+            y="6"
+            width="4"
+            height="36"
+            fill="#8b5e3c"
+            opacity="0.4"
+          />
+          <line
+            x1="16"
+            y1="15"
+            x2="28"
+            y2="15"
+            stroke="#8b5e3c"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <line
+            x1="16"
+            y1="21"
+            x2="28"
+            y2="21"
+            stroke="#8b5e3c"
+            stroke-width="1"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="16"
+            y1="27"
+            x2="23"
+            y2="27"
+            stroke="#8b5e3c"
+            stroke-width="1"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <rect
+            x="34"
+            y="10"
+            width="8"
+            height="28"
+            rx="1"
+            fill="#d4b88a"
+            stroke="#8b5e3c"
+            stroke-width="1"
+          />
+        </svg>
+        <h1>Library <span class="count-badge" id="bookCount">0</span></h1>
+        <p class="subtitle">Your books — download anytime</p>
+      </div>
+
+      <div class="card">
+        <span class="section-label">Books on device</span>
+        <ul class="book-list" id="bookList">
+          <li class="empty-note">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="nav-links">
+        <a href="/">&#8592; Upload books</a>
+        &nbsp;&middot;&nbsp;
+        <a href="/settings">&#9881; Settings</a>
+        &nbsp;&middot;&nbsp;
+        <a href="/edit">&#9998; Rename</a>
+      </div>
+
+      <footer>192.168.4.1 &mdash; E-Reader firmware</footer>
+    </div>
+
+    <script>
+      var progressCache = {};
+      var bookCache = [];
+
+      function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+
+      function fetchProgress() {
+        return fetch('/api/progress')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            progressCache = {};
+            data.forEach(function(item) {
+              progressCache[item.name] = item.page;
+            });
+          })
+          .catch(function() {
+            progressCache = {};
+          });
+      }
+
+      function fetchBooks() {
+        return fetch('/list')
+          .then(function(r) { return r.json(); })
+          .then(function(files) {
+            bookCache = files;
+            return Promise.all([fetchProgress(), files]);
+          })
+          .then(function(results) {
+            var files = results[1];
+            var list = document.getElementById('bookList');
+            document.getElementById('bookCount').textContent = files.length;
+            
+            if (!files.length) {
+              list.innerHTML = '<li class="empty-note">No books yet.</li>';
+              return;
+            }
+            
+            list.innerHTML = '';
+            files.forEach(function(f) {
+              var li = document.createElement('li');
+              li.className = 'book-item';
+              
+              var displayName = f.name.replace('.txt', '').replace(/_/g, ' ');
+              var progress = progressCache[f.name] || 0;
+              var progressPercent = progress > 0 ? Math.min(100, Math.round((progress / Math.max(1, f.size / 130)) * 100)) : 0;
+              
+              var infoHtml = '<div class="book-info">' +
+                '<span class="book-name">' + displayName + '</span>' +
+                '<div class="book-meta">' +
+                  '<span>' + formatSize(f.size) + '</span>';
+              
+              if (progress > 0) {
+                infoHtml += '<span class="book-progress">' +
+                  '<span>Page ' + progress + '</span>' +
+                  '<div class="progress-bar"><div class="progress-fill" style="width:' + progressPercent + '%"></div></div>' +
+                '</span>';
+              } else {
+                infoHtml += '<span>Not started</span>';
+              }
+              
+              infoHtml += '</div></div>';
+              
+              li.innerHTML = infoHtml +
+                '<div class="book-actions">' +
+                  '<button class="btn-download" data-name="' + f.name + '">Download</button>' +
+                '</div>';
+              
+              list.appendChild(li);
+            });
+            
+            list.querySelectorAll('.btn-download').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var name = btn.dataset.name;
+                var a = document.createElement('a');
+                a.href = '/download?name=' + encodeURIComponent(name);
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                btn.textContent = 'Downloaded!';
+                setTimeout(function() { btn.textContent = 'Download'; }, 1500);
+              });
+            });
+          })
+          .catch(function() {
+            document.getElementById('bookList').innerHTML = '<li class="empty-note">Could not load books.</li>';
+          });
+      }
+
+      fetchBooks();
+
+      (function() {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </body>
+</html>

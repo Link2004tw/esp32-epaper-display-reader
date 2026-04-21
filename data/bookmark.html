@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bookmark - E-Reader</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --surface: #faf7f2;
+        --border: #d6cfc2;
+        --border-strong: #b8ae9e;
+        --text: #2c2416;
+        --text-muted: #7a6e5f;
+        --accent: #8b4513;
+        --accent-light: #f0e6d8;
+        --accent-hover: #6e360f;
+        --ink: #1a1206;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --text: #e0dcd4;
+        --text-muted: #8a8578;
+        --accent: #c8a46e;
+        --accent-light: #3a3228;
+        --accent-hover: #d4b88a;
+        --ink: #f0ebe0;
+      }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 27px,
+          rgba(180, 160, 120, 0.12) 27px,
+          rgba(180, 160, 120, 0.12) 28px
+        );
+      }
+      [data-theme="dark"] body {
+        background-image: none;
+      }
+      .page {
+        width: 100%;
+        max-width: 600px;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        font-family: monospace;
+        color: var(--accent);
+        text-decoration: none;
+        margin-bottom: 1.5rem;
+      }
+      .back-link:hover {
+        text-decoration: underline;
+      }
+      .back-link svg {
+        width: 16px;
+        height: 16px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .bookmark-icon {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 0.75rem;
+        display: block;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      .subtitle {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1.75rem;
+        box-shadow:
+          0 2px 8px rgba(44, 36, 22, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+        margin-bottom: 1.25rem;
+      }
+      [data-theme="dark"] .card {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #c8a46e, #8b5e3c, #c8a46e);
+        border-radius: 4px 0 0 4px;
+      }
+      .book-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.5rem;
+      }
+      .page-num {
+        font-size: 0.8rem;
+        font-family: monospace;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .content {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--text);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .loading {
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+        padding: 2rem;
+      }
+      .error {
+        text-align: center;
+        color: var(--danger);
+        padding: 2rem;
+      }
+      .copy-section {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+      .btn-copy {
+        font-family: Georgia, serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #fff;
+        background: var(--accent);
+        border: none;
+        border-radius: 3px;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .btn-copy:hover {
+        background: var(--accent-hover);
+      }
+      .btn-copy:active {
+        transform: scale(0.98);
+      }
+      .btn-copy svg {
+        width: 18px;
+        height: 18px;
+      }
+      .copy-feedback {
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        font-family: monospace;
+        color: var(--accent);
+        min-height: 1.2em;
+      }
+      footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <a class="back-link" id="backLink" href="/bookmarks.html">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back to bookmarks
+      </a>
+
+      <div class="header">
+        <svg
+          class="bookmark-icon"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 6C12 4.89543 12.8954 4 14 4H34C35.1046 4 36 4.89543 36 6V42L24 34L12 42V6Z"
+            fill="#c8a46e"
+            stroke="#8b5e3c"
+            stroke-width="2"
+          />
+        </svg>
+        <h1 id="bookTitle">Loading...</h1>
+        <p class="subtitle" id="pageNum">Page 0</p>
+      </div>
+
+      <div class="card">
+        <div id="contentArea">
+          <p class="loading">Loading content...</p>
+        </div>
+        <div class="copy-section" id="copySection" style="display:none;">
+          <button class="btn-copy" id="copyBtn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Copy to Clipboard
+          </button>
+          <div class="copy-feedback" id="copyFeedback"></div>
+        </div>
+      </div>
+
+      <footer>192.168.4.1/bookmark &mdash; E-Reader firmware</footer>
+    </div>
+
+    <script>
+      var bookFile = '';
+      var pageNum = 0;
+      var bookTitle = '';
+
+      function getQueryParam(name) {
+        var params = new URLSearchParams(window.location.search);
+        return params.get(name);
+      }
+
+      function formatBookName(filename) {
+        return filename.replace('.txt', '').replace(/_/g, ' ');
+      }
+
+      function init() {
+        bookFile = getQueryParam('file');
+        pageNum = parseInt(getQueryParam('page')) || 0;
+        bookTitle = formatBookName(bookFile);
+
+        document.getElementById('bookTitle').textContent = bookTitle;
+        document.getElementById('pageNum').textContent = 'Page ' + pageNum;
+
+        var backLink = document.getElementById('backLink');
+        var index = getQueryParam('index');
+        if (index !== null) {
+          backLink.href = '/bookmarks.html?index=' + index;
+        }
+
+        fetchContent();
+      }
+
+      function fetchContent() {
+        fetch('/api/bookmark/content?file=' + encodeURIComponent(bookFile) + '&page=' + pageNum)
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var contentArea = document.getElementById('contentArea');
+            if (data.error) {
+              contentArea.innerHTML = '<p class="error">' + data.error + '</p>';
+              return;
+            }
+            contentArea.innerHTML = '<p class="content">' + data.content + '</p>';
+            document.getElementById('copySection').style.display = 'block';
+            window.bookContent = data.content;
+          })
+          .catch(function() {
+            document.getElementById('contentArea').innerHTML = '<p class="error">Could not load content.</p>';
+          });
+      }
+
+      document.getElementById('copyBtn').addEventListener('click', function() {
+        var text = window.bookContent + ' - ' + bookTitle;
+        navigator.clipboard.writeText(text).then(function() {
+          var feedback = document.getElementById('copyFeedback');
+          feedback.textContent = 'Copied!';
+          setTimeout(function() { feedback.textContent = ''; }, 2000);
+        }).catch(function() {
+          var feedback = document.getElementById('copyFeedback');
+          feedback.textContent = 'Copy failed';
+          setTimeout(function() { feedback.textContent = ''; }, 2000);
+        });
+      });
+
+      init();
+
+      (function() {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </body>
+</html>

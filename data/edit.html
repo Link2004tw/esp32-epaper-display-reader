@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rename Books</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --surface: #faf7f2;
+        --border: #d6cfc2;
+        --border-strong: #b8ae9e;
+        --text: #2c2416;
+        --text-muted: #7a6e5f;
+        --accent: #8b4513;
+        --accent-light: #f0e6d8;
+        --accent-hover: #6e360f;
+        --ink: #1a1206;
+        --selected-bg: #e8ddd0;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --text: #e0dcd4;
+        --text-muted: #8a8578;
+        --accent: #c8a46e;
+        --accent-light: #3a3228;
+        --accent-hover: #d4b88a;
+        --ink: #f0ebe0;
+        --selected-bg: #3a3228;
+      }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 27px,
+          rgba(180, 160, 120, 0.12) 27px,
+          rgba(180, 160, 120, 0.12) 28px
+        );
+      }
+      [data-theme="dark"] body {
+        background-image: none;
+      }
+      .page {
+        width: 100%;
+        max-width: 480px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      .subtitle {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1.75rem;
+        box-shadow:
+          0 2px 8px rgba(44, 36, 22, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+      }
+      [data-theme="dark"] .card {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #c8a46e, #8b5e3c, #c8a46e);
+        border-radius: 4px 0 0 4px;
+      }
+      .section-label {
+        display: block;
+        font-size: 0.68rem;
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+      }
+      .file-list {
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        max-height: 210px;
+        overflow-y: auto;
+        margin-bottom: 1.5rem;
+        background: #fff;
+      }
+      .file-item {
+        padding: 0.6rem 0.8rem;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.88rem;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.1s;
+      }
+      .file-item:last-child {
+        border-bottom: none;
+      }
+      .file-item:hover {
+        background: var(--accent-light);
+      }
+      .file-item.selected {
+        background: var(--selected-bg);
+        font-weight: 600;
+      }
+      .file-size {
+        font-size: 0.7rem;
+        font-family: "Courier New", monospace;
+        color: var(--text-muted);
+      }
+      .empty-note {
+        padding: 1rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+        font-size: 0.85rem;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1.4rem 0;
+      }
+      .field {
+        margin-bottom: 1rem;
+      }
+      .selected-display {
+        padding: 0.6rem 0.75rem;
+        background: var(--accent-light);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        font-style: italic;
+        font-size: 0.95rem;
+        color: var(--ink);
+        min-height: 2.2rem;
+        word-break: break-all;
+      }
+      .selected-display.placeholder {
+        color: var(--text-muted);
+        font-style: normal;
+        font-size: 0.85rem;
+      }
+      input[type="text"] {
+        width: 100%;
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 0.65rem 0.75rem;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+      }
+      input[type="text"]::placeholder {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      input[type="text"]:disabled {
+        background: var(--bg);
+        color: var(--text-muted);
+        cursor: not-allowed;
+      }
+      .char-count {
+        text-align: right;
+        font-size: 0.7rem;
+        font-family: "Courier New", monospace;
+        color: var(--text-muted);
+        margin-top: 0.3rem;
+      }
+      button.primary {
+        width: 100%;
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        background: var(--accent);
+        border: none;
+        border-radius: 3px;
+        padding: 0.72rem 1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        margin-top: 0.5rem;
+      }
+      button.primary:hover {
+        background: var(--accent-hover);
+      }
+      button.primary:disabled {
+        background: var(--border-strong);
+        cursor: not-allowed;
+      }
+      #renameStatus {
+        margin-top: 0.65rem;
+        font-size: 0.82rem;
+        font-family: monospace;
+        min-height: 1.1em;
+        color: var(--accent);
+        text-align: center;
+      }
+      .nav-links {
+        text-align: center;
+        margin-top: 1.25rem;
+      }
+      .nav-links a {
+        font-size: 0.78rem;
+        font-family: monospace;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+      footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <h1>Rename Books</h1>
+        <p class="subtitle">ESP32-C3 &mdash; LittleFS file manager</p>
+      </div>
+
+      <div class="card">
+        <span class="section-label">Files on device</span>
+        <div class="file-list" id="fileList">
+          <div class="empty-note">Loading files&hellip;</div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="field">
+          <span class="section-label">Selected file</span>
+          <div class="selected-display placeholder" id="selectedDisplay">
+            No file selected
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="section-label">New name</span>
+          <input
+            type="text"
+            id="newName"
+            placeholder="Select a file above first&hellip;"
+            maxlength="128"
+            autocomplete="off"
+            spellcheck="false"
+            disabled
+          />
+          <div class="char-count" id="charCount">0 / 128</div>
+        </div>
+
+        <button class="primary" id="saveBtn" onclick="saveName()" disabled>
+          Rename file
+        </button>
+        <div id="renameStatus"></div>
+      </div>
+
+      <div class="nav-links">
+        <a href="/">&larr; Back to upload</a>
+        &nbsp;&middot;&nbsp;
+        <a href="/settings">&#9881; Settings</a>
+      </div>
+
+      <footer>192.168.4.1/edit &mdash; E-Reader firmware</footer>
+    </div>
+
+    <script>
+      var MAX = 128;
+      var selectedFile = null;
+      var input = document.getElementById("newName");
+      var charCount = document.getElementById("charCount");
+      var saveBtn = document.getElementById("saveBtn");
+      var selectedDisplay = document.getElementById("selectedDisplay");
+      var fileList = document.getElementById("fileList");
+      var renameStatus = document.getElementById("renameStatus");
+
+      function fetchFiles() {
+        fetch("/list")
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (files) {
+            if (!files.length) {
+              fileList.innerHTML =
+                '<div class="empty-note">No files found on device</div>';
+              return;
+            }
+            fileList.innerHTML = "";
+            files.forEach(function (f) {
+              var item = document.createElement("div");
+              item.className = "file-item";
+              item.innerHTML =
+                "<span>" +
+                f.name +
+                "</span>" +
+                '<span class="file-size">' +
+                (f.size / 1024).toFixed(1) +
+                " KB</span>";
+              item.addEventListener("click", function () {
+                selectFile(f.name, item);
+              });
+              fileList.appendChild(item);
+            });
+          })
+          .catch(function () {
+            fileList.innerHTML =
+              '<div class="empty-note">Could not load files</div>';
+          });
+      }
+
+      function selectFile(name, el) {
+        selectedFile = name;
+        fileList.querySelectorAll(".file-item").forEach(function (i) {
+          i.classList.remove("selected");
+        });
+        el.classList.add("selected");
+        selectedDisplay.textContent = name;
+        selectedDisplay.classList.remove("placeholder");
+        input.disabled = false;
+        input.placeholder = "Enter new name\u2026";
+        input.value = name;
+        input.focus();
+        charCount.textContent = name.length + " / " + MAX;
+        saveBtn.disabled = false;
+        renameStatus.textContent = "";
+      }
+
+      input.addEventListener("input", function () {
+        var len = input.value.length;
+        charCount.textContent = len + " / " + MAX;
+        saveBtn.disabled = len === 0 || !selectedFile;
+      });
+
+      function saveName() {
+        var newName = input.value.trim();
+        if (!newName || !selectedFile) return;
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Renaming\u2026";
+        renameStatus.textContent = "";
+
+        fetch("/api/rename", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ from: selectedFile, to: newName }),
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            renameStatus.textContent = '\u2713 Renamed to "' + newName + '"';
+            selectedFile = newName;
+            selectedDisplay.textContent = newName;
+            fetchFiles();
+          })
+          .catch(function (e) {
+            renameStatus.textContent = "\u2717 Failed: " + e.message;
+          })
+          .finally(function () {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Rename file";
+          });
+      }
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !saveBtn.disabled) saveName();
+      });
+
+      fetchFiles();
+
+      (function() {
+        var saved = localStorage.getItem("theme");
+        if (saved === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+  </body>
+</html>

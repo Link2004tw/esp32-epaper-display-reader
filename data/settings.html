@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --surface: #faf7f2;
+        --border: #d6cfc2;
+        --border-strong: #b8ae9e;
+        --text: #2c2416;
+        --text-muted: #7a6e5f;
+        --accent: #8b4513;
+        --accent-light: #f0e6d8;
+        --accent-hover: #6e360f;
+        --ink: #1a1206;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --text: #e0dcd4;
+        --text-muted: #8a8578;
+        --accent: #c8a46e;
+        --accent-light: #3a3228;
+        --accent-hover: #d4b88a;
+        --ink: #f0ebe0;
+      }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+      }
+      .page {
+        width: 100%;
+        max-width: 480px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .settings-icon {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 0.75rem;
+        display: block;
+      }
+      h1 {
+        font-size: 1.7rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      .subtitle {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1.75rem;
+        box-shadow:
+          0 2px 8px rgba(44, 36, 22, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+        margin-bottom: 1.25rem;
+      }
+      [data-theme="dark"] .card {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #c8a46e, #8b5e3c, #c8a46e);
+        border-radius: 4px 0 0 4px;
+      }
+      .section-label {
+        display: block;
+        font-size: 0.68rem;
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+      }
+      .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .setting-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      .setting-row:first-child {
+        padding-top: 0;
+      }
+      .setting-label {
+        font-size: 0.95rem;
+        color: var(--text);
+      }
+      .setting-desc {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+      .toggle {
+        position: relative;
+        width: 48px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-strong);
+        border-radius: 26px;
+        transition: background-color 0.2s;
+      }
+      .toggle-slider::before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .toggle input:checked + .toggle-slider {
+        background-color: var(--accent);
+      }
+      .toggle input:checked + .toggle-slider::before {
+        transform: translateX(22px);
+      }
+      .toggle input:focus + .toggle-slider {
+        box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+      }
+      .slider-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .slider-value {
+        min-width: 60px;
+        text-align: right;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100px;
+        height: 6px;
+        background: var(--border-strong);
+        border-radius: 3px;
+        outline: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--accent);
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: var(--accent);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+      }
+      .nav-links {
+        text-align: center;
+        margin-top: 0.5rem;
+      }
+      .nav-links a {
+        font-size: 0.78rem;
+        font-family: monospace;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+      footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--bg);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <svg
+          class="settings-icon"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="2.5" fill="none" style="color: var(--accent)"/>
+          <path d="M24 8v4M24 36v4M8 24h4M36 24h4M12.4 12.4l2.8 2.8M32.8 32.8l2.8 2.8M12.4 35.6l2.8-2.8M32.8 15.2l2.8-2.8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="color: var(--accent)"/>
+          <circle cx="24" cy="24" r="4" fill="var(--accent)"/>
+        </svg>
+        <h1>Settings</h1>
+        <p class="subtitle">ESP32-C3 &mdash; customize your experience</p>
+      </div>
+
+      <div class="card">
+        <span class="section-label">Display</span>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Dark Mode</div>
+            <div class="setting-desc">Switch between light and dark theme</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="darkModeToggle" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="section-label">Power</span>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Sleep Timeout</div>
+            <div class="setting-desc">Auto-sleep after inactivity</div>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="sleepTimeout" min="1" max="10" value="5" />
+            <span class="slider-value"><span id="timeoutValue">5</span> min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a href="/">&larr; Back to upload</a>
+      </div>
+
+      <footer>192.168.4.1/settings &mdash; E-Reader firmware</footer>
+    </div>
+
+    <div class="toast" id="toast">Saved</div>
+
+    <script>
+      (function() {
+        var toggle = document.getElementById('darkModeToggle');
+        var slider = document.getElementById('sleepTimeout');
+        var timeoutValue = document.getElementById('timeoutValue');
+        var toast = document.getElementById('toast');
+
+        function showToast() {
+          toast.classList.add('show');
+          setTimeout(function() {
+            toast.classList.remove('show');
+          }, 1500);
+        }
+
+        function saveSettings() {
+          var data = JSON.stringify({
+            darkMode: toggle.checked,
+            sleepTimeoutMs: parseInt(slider.value) * 60000
+          });
+          fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: data
+          }).then(function() {
+            showToast();
+          });
+        }
+
+        fetch('/api/settings')
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            toggle.checked = data.darkMode;
+            if (data.darkMode) {
+              document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            var minutes = Math.round(data.sleepTimeoutMs / 60000);
+            slider.value = minutes;
+            timeoutValue.textContent = minutes;
+          });
+
+        toggle.addEventListener('change', function() {
+          if (toggle.checked) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+          saveSettings();
+        });
+
+        slider.addEventListener('input', function() {
+          timeoutValue.textContent = slider.value;
+        });
+        slider.addEventListener('change', function() {
+          saveSettings();
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bookmarks - E-Reader</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #f5f0e8;
+        --surface: #faf7f2;
+        --border: #d6cfc2;
+        --border-strong: #b8ae9e;
+        --text: #2c2416;
+        --text-muted: #7a6e5f;
+        --accent: #8b4513;
+        --accent-light: #f0e6d8;
+        --accent-hover: #6e360f;
+        --ink: #1a1206;
+        --danger: #a33;
+        --danger-hover: #7a1f1f;
+      }
+      [data-theme="dark"] {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --text: #e0dcd4;
+        --text-muted: #8a8578;
+        --accent: #c8a46e;
+        --accent-light: #3a3228;
+        --accent-hover: #d4b88a;
+        --ink: #f0ebe0;
+        --danger: #e55;
+        --danger-hover: #ff6666;
+      }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 27px,
+          rgba(180, 160, 120, 0.12) 27px,
+          rgba(180, 160, 120, 0.12) 28px
+        );
+      }
+      [data-theme="dark"] body {
+        background-image: none;
+      }
+      .page {
+        width: 100%;
+        max-width: 600px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .bookmark-icon {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 0.75rem;
+        display: block;
+      }
+      h1 {
+        font-size: 1.7rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.2rem;
+      }
+      .subtitle {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1.75rem;
+        box-shadow:
+          0 2px 8px rgba(44, 36, 22, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        position: relative;
+        margin-bottom: 1.25rem;
+      }
+      [data-theme="dark"] .card {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(to bottom, #c8a46e, #8b5e3c, #c8a46e);
+        border-radius: 4px 0 0 4px;
+      }
+      .section-label {
+        display: block;
+        font-size: 0.68rem;
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+      }
+      .book-group {
+        margin-bottom: 1.5rem;
+      }
+      .book-group:last-child {
+        margin-bottom: 0;
+      }
+      .book-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+      }
+      .book-title svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+      .bookmark-list {
+        list-style: none;
+        padding-left: 1.5rem;
+      }
+      .bookmark-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        gap: 0.75rem;
+      }
+      .bookmark-item:last-child {
+        border-bottom: none;
+      }
+      .bookmark-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .bookmark-page {
+        color: var(--text);
+        font-weight: 500;
+      }
+      .bookmark-time {
+        font-size: 0.72rem;
+        font-family: monospace;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+      .bookmark-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+      .btn-view {
+        font-family: monospace;
+        font-size: 0.72rem;
+        padding: 0.35rem 0.7rem;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+      .btn-view:hover {
+        background: var(--accent-hover);
+      }
+      .btn-delete {
+        font-family: monospace;
+        font-size: 0.72rem;
+        padding: 0.35rem 0.7rem;
+        background: transparent;
+        color: var(--danger);
+        border: 1px solid var(--danger);
+        border-radius: 2px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.1s, color 0.1s;
+      }
+      .btn-delete:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+      .empty-note {
+        padding: 0.75rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+        font-size: 0.85rem;
+      }
+      .nav-links {
+        text-align: center;
+        margin-top: 0.5rem;
+      }
+      .nav-links a {
+        font-size: 0.78rem;
+        font-family: monospace;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+      footer {
+        text-align: center;
+        margin-top: 1.25rem;
+        font-size: 0.68rem;
+        font-family: monospace;
+        color: var(--text-muted);
+      }
+      .count-badge {
+        display: inline-block;
+        background: var(--accent-light);
+        color: var(--accent);
+        font-size: 0.65rem;
+        font-family: monospace;
+        padding: 0.15rem 0.4rem;
+        border-radius: 10px;
+        margin-left: 0.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <svg
+          class="bookmark-icon"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 6C12 4.89543 12.8954 4 14 4H34C35.1046 4 36 4.89543 36 6V42L24 34L12 42V6Z"
+            fill="#c8a46e"
+            stroke="#8b5e3c"
+            stroke-width="2"
+          />
+          <path
+            d="M18 14H30M18 20H30M18 26H26"
+            stroke="#8b5e3c"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        <h1>Bookmarks <span class="count-badge" id="bookmarkCount">0</span></h1>
+        <p class="subtitle">Your saved reading places</p>
+      </div>
+
+      <div class="card">
+        <span class="section-label">Saved bookmarks</span>
+        <div id="bookmarkGroups">
+          <li class="empty-note">Loading...</li>
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a href="/">&#8592; Back to upload</a>
+      </div>
+
+      <footer>192.168.4.1/bookmarks.html &mdash; E-Reader firmware</footer>
+    </div>
+
+    <script>
+      function formatTime(timestamp) {
+        var now = Date.now();
+        var diff = now - timestamp;
+        var seconds = Math.floor(diff / 1000);
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(minutes / 60);
+        var days = Math.floor(hours / 24);
+
+        if (days > 0) return days + (days === 1 ? ' day ago' : ' days ago');
+        if (hours > 0) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+        if (minutes > 0) return minutes + (minutes === 1 ? ' min ago' : ' mins ago');
+        return 'just now';
+      }
+
+      function formatBookName(filename) {
+        return filename.replace('.txt', '').replace(/_/g, ' ');
+      }
+
+      function groupByBook(bookmarks) {
+        var groups = {};
+        bookmarks.forEach(function(b) {
+          var book = b.file;
+          if (!groups[book]) {
+            groups[book] = [];
+          }
+          groups[book].push(b);
+        });
+        return groups;
+      }
+
+      function fetchBookmarks() {
+        return fetch('/api/bookmarks')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var container = document.getElementById('bookmarkGroups');
+            document.getElementById('bookmarkCount').textContent = data.bookmarks.length;
+
+            if (!data.bookmarks.length) {
+              container.innerHTML = '<li class="empty-note">No bookmarks yet.<br><br>Hold RIGHT while reading a book to save one.</li>';
+              return;
+            }
+
+            var groups = groupByBook(data.bookmarks);
+            var html = '';
+
+            Object.keys(groups).forEach(function(book) {
+              var bookmarks = groups[book];
+              html += '<div class="book-group">';
+              html += '<div class="book-title">';
+              html += '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">';
+              html += '<rect x="6" y="6" width="28" height="36" rx="2" fill="#c8a46e" stroke="#8b5e3c" stroke-width="1.5"/>';
+              html += '<rect x="10" y="6" width="4" height="36" fill="#8b5e3c" opacity="0.4"/>';
+              html += '</svg>';
+              html += formatBookName(book);
+              html += ' <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem">(' + bookmarks.length + ')</span>';
+              html += '</div>';
+              html += '<ul class="bookmark-list">';
+
+              bookmarks.forEach(function(b) {
+                html += '<li class="bookmark-item">';
+                html += '<div class="bookmark-info">';
+                html += '<div class="bookmark-page">Page ' + b.page + '</div>';
+                html += '<div class="bookmark-time">' + formatTime(b.time) + '</div>';
+                html += '</div>';
+                html += '<div class="bookmark-actions">';
+                html += '<button class="btn-view" data-file="' + b.file + '" data-page="' + b.page + '" data-index="' + b.index + '">View</button>';
+                html += '<button class="btn-delete" data-index="' + b.index + '">Delete</button>';
+                html += '</div>';
+                html += '</li>';
+              });
+
+              html += '</ul></div>';
+            });
+
+            container.innerHTML = html;
+
+            container.querySelectorAll('.btn-view').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var file = btn.dataset.file;
+                var page = btn.dataset.page;
+                window.location.href = '/bookmark.html?file=' + encodeURIComponent(file) + '&page=' + page + '&index=' + btn.dataset.index;
+              });
+            });
+
+            container.querySelectorAll('.btn-delete').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var idx = btn.dataset.index;
+                if (!confirm('Delete this bookmark?')) return;
+                fetch('/api/bookmarks?index=' + idx, { method: 'DELETE' })
+                  .then(function() { fetchBookmarks(); });
+              });
+            });
+          })
+          .catch(function() {
+            document.getElementById('bookmarkGroups').innerHTML = '<li class="empty-note">Could not load bookmarks.</li>';
+          });
+      }
+
+      fetchBookmarks();
+
+      (function() {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </body>
+</html>
