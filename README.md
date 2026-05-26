@@ -1,6 +1,6 @@
 # ESP32-C3 E-Reader
 
-A DIY e-book reader built with an ESP32-C3 Super Mini and a 2.13" e-paper display. Books are uploaded via WiFi and read on the device with full pagination, bookmarks, and sleep mode.
+A DIY e-book reader built with an ESP32 and a 2.13" e-paper display. Books are uploaded via WiFi and read on the device with pagination, bookmarks, Arabic/RTL support, and dark mode.
 
 ![Schematic](Schematic_kindle.png)
 
@@ -24,7 +24,6 @@ A DIY e-book reader built with an ESP32-C3 Super Mini and a 2.13" e-paper displa
 | Button DOWN | 13 | INPUT_PULLUP |
 | Button LEFT | 14 | INPUT_PULLUP |
 | Button RIGHT | 27 | INPUT_PULLUP |
-| Wake Button | 25 | Deep sleep wake |
 | Battery ADC | 32 | Via voltage divider |
 
 ### Battery (Optional)
@@ -38,10 +37,9 @@ Connect a voltage divider (two 100K resistors) between battery (+) and GND, with
 - **Pagination**: Navigate pages with UP/DOWN buttons
 - **Bookmarks**: Save bookmarks (long-press RIGHT), view on device or web
 - **Reading Progress**: Auto-saves last page per book
-- **Sleep Mode**: Auto-sleep after configurable timeout, manual sleep (long-press LEFT)
-- **Wake on Any Button**: Resume from any button press
+- **Arabic / RTL**: Auto-detected per book; toggle in device settings
 - **Battery Display**: Shows battery percentage in footer (if wired)
-- **Dark Mode**: Toggle via web settings
+- **Dark Mode**: Toggle on device or via web settings
 
 ## Web Interface
 
@@ -52,21 +50,20 @@ Access at `http://192.168.4.1` (default AP: **E-Reader**, password: **12345678**
 | `/` | Upload and manage books |
 | `/library` | Browse and download books |
 | `/edit` | Rename books |
-| `/settings` | Dark mode, sleep timeout |
+| `/settings` | Dark mode (web UI; device settings include Arabic) |
 | `/bookmarks.html` | View all bookmarks |
 
 ## Controls
 
 ### Book List Screen
-- **UP**: Show bookmarks
+- **UP**: Select previous book (at top item → bookmarks)
 - **DOWN**: Select next book
 - **RIGHT**: Open selected book
 - **LEFT**: Open settings
-- **Long-press LEFT**: Enter sleep
 
 ### Reading Screen
-- **UP**: Next page
-- **DOWN**: Previous page
+- **UP**: Previous page
+- **DOWN**: Next page
 - **RIGHT**: Next page
 - **LEFT**: Return to book list
 - **Long-press RIGHT**: Save bookmark
@@ -113,7 +110,6 @@ GPIO 12  → UP button
 GPIO 13  → DOWN button
 GPIO 14  → LEFT button
 GPIO 27  → RIGHT button
-GPIO 25  → WAKE button
 ```
 
 ## API Endpoints
@@ -133,8 +129,8 @@ GPIO 25  → WAKE button
 ## Files
 
 - `epaper-reader-esp32.ino` - Main sketch
+- `Arabi12pt7b.h` - Arabic font (generated via `generate_arabic_font.py`)
 - `data/` - Web UI files (HTML, CSS)
-- `TASKS.md` - Feature tracking
 
 ## License
 

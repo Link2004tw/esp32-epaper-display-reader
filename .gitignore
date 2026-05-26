@@ -1,0 +1,14 @@
+# IDE / tooling
+.vscode/
+.idea/
+*.blu
+chat.json
+
+# Font build artifacts (keep Arabi12pt7b.h and generate_arabic_font.py tracked)
+NotoNaskhArabic.zip
+arabic_subset.ttf
+font_extracted/
+
+# OS
+.DS_Store
+Thumbs.db
