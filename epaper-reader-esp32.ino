@@ -33,8 +33,10 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
+#include <SD.h>
 
 #define CS_PIN   5
+#define SD_CS_PIN 15
 #define DC_PIN   17
 #define RES_PIN  16
 #define BUSY_PIN 4
@@ -80,6 +82,7 @@ int    selectedIndex = 0;
 // ---------- Settings ----------
 bool darkMode = false;
 bool arabicMode = false;
+bool sdAvailable = false;
 
 // ---------- Battery ----------
 int           batteryPercent    = 100;
@@ -177,7 +180,7 @@ bool detectArabicText(const String& text, int checkLen) {
 
 // Get first page content for Arabic detection
 bool detectArabicBook(const String& filename) {
-  File f = LittleFS.open("/" + filename, "r");
+  File f = openBookFile("/" + filename, "r");
   if (!f) return false;
   String sample = "";
   for (int i = 0; i < 500 && f.available(); i++) {
@@ -339,15 +342,28 @@ bool isSystemFile(const String& name) {
 }
 
 // ============================================================
-//  LittleFS helpers
+//  File helpers (SD primary, LittleFS fallback)
+// ============================================================
+File openBookFile(const String& path, const char* mode) {
+  if (sdAvailable) {
+    File f = SD.open(path, mode);
+    if (f) return f;
+  }
+  return LittleFS.open(path, mode);
+}
+
+// ============================================================
+//  Book list (SD primary, LittleFS fallback)
 // ============================================================
 void loadBookList() {
   bookCount = 0;
-  File root = LittleFS.open("/");
+  File root = sdAvailable ? SD.open("/") : LittleFS.open("/");
   File f    = root.openNextFile();
   while (f && bookCount < MAX_BOOKS) {
     String name = String(f.name());
-    if (!isSystemFile(name)) bookNames[bookCount++] = name;
+    if (name.startsWith("/")) name = name.substring(1);
+    if (!name.startsWith(".") && !isSystemFile(name) && name.endsWith(".txt"))
+      bookNames[bookCount++] = name;
     f = root.openNextFile();
   }
   if (selectedIndex >= bookCount) selectedIndex = max(0, bookCount - 1);
@@ -356,7 +372,7 @@ void loadBookList() {
 
 // ---------- Pagination ----------
 int getFileCharCount(const String& filename) {
-  File f = LittleFS.open("/" + filename, "r");
+  File f = openBookFile("/" + filename, "r");
   if (!f) return 0;
   int sz = f.size();
   f.close();
@@ -673,6 +689,24 @@ void drawReadingPage() {
   String pageStr = "(" + String(currentPage) + "/" + String(totalPages) + ")";
   if (arabicMode) pageStr = "(RTL) " + pageStr;
 
+  // Cache page content before display loop (avoids SPI conflicts)
+  String pageContent = "";
+  bool  fileOk      = false;
+  File f = openBookFile("/" + currentBook, "r");
+  if (f) {
+    fileOk = true;
+    int charsToSkip = (currentPage - 1) * CHARS_PER_PAGE;
+    int charCount   = 0;
+    while (f.available() && charCount < charsToSkip) { f.read(); charCount++; }
+    charCount = 0;
+    while (f.available() && charCount < CHARS_PER_PAGE) {
+      char c = f.read(); charCount++;
+      if (c == '\r') continue;
+      pageContent += c;
+    }
+    f.close();
+  }
+
   display.firstPage();
   do {
     display.fillScreen(bg);
@@ -685,33 +719,25 @@ void drawReadingPage() {
     int16_t tbx, tby;
     uint16_t tbw, tbh;
 
-    File f = LittleFS.open("/" + currentBook, "r");
-    if (!f) {
+    if (!fileOk) {
       display.setCursor(4, CONTENT_Y_START);
       display.print("Cannot open file.");
     } else {
-      // Skip to the right page
-      int charsToSkip = (currentPage - 1) * CHARS_PER_PAGE;
-      for (int i = 0; i < charsToSkip && f.available(); i++) f.read();
-
       // Measure space width once
       int16_t sx, sy; uint16_t sw, sh, nsw, nsh;
       display.getTextBounds("A B", 0, 0, &sx, &sy, &sw, &sh);
       display.getTextBounds("AB",  0, 0, &sx, &sy, &nsw, &nsh);
       int spaceWidth = sw - nsw;
 
-      // RTL or LTR starting X position
       int cursorX  = arabicMode ? (SCREEN_W - 4) : 4;
       const int maxX  = SCREEN_W - 4;
       const int minX  = 4;
       int cursorY = CONTENT_Y_START;
-      String word     = "";
-      int charCount = 0;
+      String word = "";
+      int    pos  = 0;
 
-      while (f.available() && cursorY <= CONTENT_MAX_Y && charCount < CHARS_PER_PAGE) {
-        char c = f.read();
-        charCount++;
-        if (c == '\r') continue;
+      while (pos < (int)pageContent.length() && cursorY <= CONTENT_MAX_Y) {
+        char c = pageContent.charAt(pos++);
 
         if (c == ' ' || c == '\n') {
           if (word.length() > 0) {
@@ -741,7 +767,6 @@ void drawReadingPage() {
           }
         } else {
           word += c;
-          // Force-flush very long words
           if ((int)word.length() > CHARS_PER_LINE) {
             display.getTextBounds(word, 0, 0, &tbx, &tby, &tbw, &tbh);
             if (arabicMode) {
@@ -763,12 +788,10 @@ void drawReadingPage() {
           }
         }
       }
-      // Flush remaining word
       if (word.length() > 0 && cursorY <= CONTENT_MAX_Y) {
         display.setCursor(cursorX, cursorY);
         display.print(word);
       }
-      f.close();
     }
 
     String footer = "L:back R:Pg Hold:Bk";
@@ -871,9 +894,14 @@ void setupServer() {
   server.on("/download", HTTP_GET, [](AsyncWebServerRequest *req) {
     if (!req->hasParam("name")) { req->send(400, "text/plain", "Missing name"); return; }
     String name = req->getParam("name")->value();
-    if (isSystemFile(name))         { req->send(403, "text/plain", "Forbidden");    return; }
-    if (!LittleFS.exists("/" + name)) { req->send(404, "text/plain", "Not found");  return; }
-    req->send(LittleFS, "/" + name, "text/plain");
+    if (isSystemFile(name)) { req->send(403, "text/plain", "Forbidden"); return; }
+    if (sdAvailable) {
+      if (!SD.exists("/" + name)) { req->send(404, "text/plain", "Not found"); return; }
+      req->send(SD, "/" + name, "text/plain");
+    } else {
+      if (!LittleFS.exists("/" + name)) { req->send(404, "text/plain", "Not found"); return; }
+      req->send(LittleFS, "/" + name, "text/plain");
+    }
   });
 
   server.on("/api/progress", HTTP_GET, [](AsyncWebServerRequest *req) {
@@ -900,12 +928,13 @@ void setupServer() {
 
   server.on("/list", HTTP_GET, [](AsyncWebServerRequest *req) {
     String json = "[";
-    File root = LittleFS.open("/");
+    File root = sdAvailable ? SD.open("/") : LittleFS.open("/");
     File file = root.openNextFile();
     bool first = true;
     while (file) {
       String name = String(file.name());
-      if (!isSystemFile(name)) {
+      if (name.startsWith("/")) name = name.substring(1);
+      if (!name.startsWith(".") && !isSystemFile(name) && name.endsWith(".txt")) {
         if (!first) json += ",";
         json += "{\"name\":\"" + name + "\",\"size\":" + file.size() + "}";
         first = false;
@@ -926,7 +955,8 @@ void setupServer() {
       int ts = body.indexOf("\"to\":\"")   + 6, te = body.indexOf("\"", ts);
       String from = body.substring(fs, fe), to = body.substring(ts, te);
       if (from.length() > 0 && to.length() > 0) {
-        LittleFS.rename("/" + from, "/" + to);
+        if (sdAvailable) SD.rename("/" + from, "/" + to);
+        else LittleFS.rename("/" + from, "/" + to);
         loadBookList();
         drawBookList();
       }
@@ -939,11 +969,12 @@ void setupServer() {
       static File uploadFile;
       if (!index) {
         Serial.println("Uploading: " + filename);
-        uploadFile = LittleFS.open("/" + filename, "w");
+        uploadFile = sdAvailable ? SD.open("/" + filename, "w")
+                                 : LittleFS.open("/" + filename, "w");
       }
       if (uploadFile) uploadFile.write(data, len);
       if (final) {
-        uploadFile.close();
+        if (uploadFile) uploadFile.close();
         Serial.println("Upload done: " + String(index + len) + " bytes");
         String bookName = filename;
         int dot = filename.lastIndexOf('.');
@@ -961,7 +992,8 @@ void setupServer() {
     if (!req->hasParam("name")) { req->send(400, "text/plain", "Missing name"); return; }
     String name = req->getParam("name")->value();
     if (isSystemFile(name)) { req->send(403, "text/plain", "Forbidden"); return; }
-    LittleFS.remove("/" + name);
+    if (sdAvailable) SD.remove("/" + name);
+    else LittleFS.remove("/" + name);
     loadBookList();
     drawBookList();
     req->send(200, "text/plain", "Deleted");
@@ -1030,7 +1062,7 @@ void setupServer() {
     }
     String filename = "/" + req->getParam("file")->value();
     int    pageNum  = req->getParam("page")->value().toInt();
-    File   bookFile = LittleFS.open(filename, "r");
+    File bookFile = openBookFile(filename, "r");
     if (!bookFile) {
       req->send(404, "application/json", "{\"error\":\"book not found\"}");
       return;
@@ -1065,6 +1097,8 @@ static void commonInit() {
 
   LittleFS.begin(true);
   display.init(115200, true, 50, false);
+  sdAvailable = SD.begin(SD_CS_PIN);
+  if (!sdAvailable) Serial.println("SD init failed");
   initBattery();
   batteryPercent    = readBattery();
   lastBatteryUpdate = millis();

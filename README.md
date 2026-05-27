@@ -1,43 +1,79 @@
-# ESP32-C3 E-Reader
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120px' height='120px' stroke-width='1.5' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M17 15.51L17.01 15.4989' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M12 11.9999C14.5 9.00001 19.5 9 22 12' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M14 14C15.5 12 18.5 12 20 14' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M22 7V5C22 3.89543 21.1046 3 20 3H4C2.89543 3 2 3.89543 2 5V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V17' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M2 12H6' stroke='%23FFFFFF' stroke-width='1.5'%3E%3C/path%3E%3Cpath d='M6 3V21' stroke='%23FFFFFF' stroke-width='1.5'%3E%3C/path%3E%3C/svg%3E">
+    <img alt="E-Reader icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120px' height='120px' stroke-width='1.5' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M17 15.51L17.01 15.4989' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M12 11.9999C14.5 9.00001 19.5 9 22 12' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M14 14C15.5 12 18.5 12 20 14' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M22 7V5C22 3.89543 21.1046 3 20 3H4C2.89543 3 2 3.89543 2 5V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V17' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3C/path%3E%3Cpath d='M2 12H6' stroke='%23000000' stroke-width='1.5'%3E%3C/path%3E%3Cpath d='M6 3V21' stroke='%23000000' stroke-width='1.5'%3E%3C/path%3E%3C/svg%3E">
+  </picture>
+</div>
 
-A DIY e-book reader built with an ESP32 and a 2.13" e-paper display. Books are uploaded via WiFi and read on the device with pagination, bookmarks, Arabic/RTL support, and dark mode.
+# ESP32 E-Paper Display Reader
 
-![Schematic](Schematic_kindle.png)
+A portable ESP32-powered e-paper reading device with a web-based interface for transferring and reading text content. Books are stored on an SD card, with system files on internal flash.
 
-## Hardware
+---
 
-- **Board**: ESP32-C3 Super Mini
-- **Display**: 2.13" DEPG0213BN e-paper (SSD1680, 122x250 pixels, B/W, landscape rotation)
-- **Storage**: LittleFS (internal flash)
-- **Buttons**: 4 tactile buttons (UP, DOWN, LEFT, RIGHT)
-- **Battery**: Optional LiPo via voltage divider on ADC
+## Features
+
+- ESP32-based system
+- 2.13" e-paper display (SSD1680, 122x250, B/W)
+- SD card storage for books (SPI mode, shared bus with display)
+- Web UI for file transfer (upload/download/delete books)
+- Page navigation with physical buttons
+- Bookmarks and reading progress
+- Arabic / RTL text auto-detection and rendering
+- Dark mode toggle (device and web)
+- Battery monitoring (optional)
+- Lightweight and portable
+- Low power display technology
+- Open-source project
+
+---
+
+## Gallery
+
+### Final Device
+
+![Device Photo](images/final_product.jpg)
+
+### Web Interface
+
+![Web UI](images/webui.png)
+
+_Screenshot placeholder — upload your own to `images/webui.png`_
+
+---
+
+## Hardware Used
+
+- **ESP32** (e.g. DevKit, C3, S3, etc.)
+- **E-paper display**: 2.13" DEPG0213BN (SSD1680, 122x250, B/W)
+- **SD card module** (SPI mode, shares bus with display)
+- **Buttons**: 4 tactile switches (UP, DOWN, LEFT, RIGHT)
+- **Battery module** (optional — LiPo via voltage divider on ADC)
+- Jumper wires / prototype board
 
 ### Pin Connections
 
-| Component | GPIO | Notes |
-|-----------|------|-------|
-| Display CS | 5 | SPI |
-| Display DC | 17 | |
-| Display RST | 16 | |
-| Display BUSY | 4 | |
-| Display SCK | 18 | SPI |
-| Display MOSI | 23 | SPI |
-| Button UP | 12 | INPUT_PULLUP |
-| Button DOWN | 13 | INPUT_PULLUP |
-| Button LEFT | 14 | INPUT_PULLUP |
-| Button RIGHT | 27 | INPUT_PULLUP |
-| Battery ADC | 32 | Via voltage divider |
+| Component    | GPIO | Notes                              |
+| ------------ | ---- | ---------------------------------- |
+| Display CS   | 5    | SPI                                |
+| Display DC   | 17   |                                    |
+| Display RST  | 16   |                                    |
+| Display BUSY | 4    |                                    |
+| Display SCK  | 18   | SPI (shared with SD)               |
+| Display MOSI | 23   | SPI (shared with SD)               |
+| SD Card CS   | 15   | SPI                                |
+| SD Card MISO | 19   | SPI (shared — display MISO unused) |
+| Button UP    | 12   | INPUT_PULLUP                       |
+| Button DOWN  | 13   | INPUT_PULLUP                       |
+| Button LEFT  | 14   | INPUT_PULLUP                       |
+| Button RIGHT | 27   | INPUT_PULLUP                       |
+| Battery ADC  | 32   | Voltage divider (optional)         |
 
-### Battery (Optional)
-
-Connect a voltage divider (two 100K resistors) between battery (+) and GND, with the tap point to GPIO 32:
-- Battery (+) -> 100K -> GPIO 32 -> 100K -> GND
-
-Reads 12-bit ADC, maps 2.7V-4.2V LiPo range to 0-100%. Updated every 60 seconds.
+### Wiring Diagram
 
 ```
-ESP32-C3 -> E-Paper Display
----------------------------------------------
+ESP32 -> E-Paper Display
+------------------------------
 GPIO 5   -> CS
 GPIO 17  -> DC
 GPIO 16  -> RST
@@ -47,57 +83,145 @@ GPIO 23  -> MOSI
 GND      -> GND
 3V3      -> VCC
 
-ESP32-C3 -> Buttons (to GND)
----------------------------------------------
+ESP32 -> SD Card Module (SPI)
+------------------------------
+GPIO 18  -> SCK    (shared)
+GPIO 23  -> MOSI   (shared)
+GPIO 19  -> MISO
+GPIO 15  -> CS
+GND      -> GND
+5V       -> VCC    (or 3.3V depending on module regulator)
+
+ESP32 -> Buttons (to GND)
+------------------------------
 GPIO 12  -> UP button
 GPIO 13  -> DOWN button
 GPIO 14  -> LEFT button
 GPIO 27  -> RIGHT button
 ```
 
-## Features
+### Battery (Optional)
 
-- **Book Management**: Upload `.txt` books via WiFi web interface (drag-and-drop supported)
-- **Pagination**: Navigate pages with UP/DOWN or LEFT/RIGHT buttons
-- **Bookmarks**: Save bookmarks (long-press RIGHT), view on device or web
-- **Reading Progress**: Auto-saves last page per book
-- **Arabic / RTL**: Auto-detected per book; toggle in device settings
-- **Battery Display**: Shows battery percentage in reading footer (if wired)
-- **Dark Mode**: Toggle on device or via web settings
-- **Responsive Web UI**: Parchment-themed HTML interface with light/dark mode
+Connect a voltage divider (two 100K resistors) between battery (+) and GND, with the tap point to GPIO 32:
 
-### Limits
+```
+Battery (+) -> 100K -> GPIO 32 -> 100K -> GND
+```
 
-| Limit | Value |
-|-------|-------|
-| Max books | 20 |
-| Max bookmarks per book | 20 |
-| Book name display length | 30 characters |
-| Supported file format | `.txt` (UTF-8) |
-| Page size | 26 chars/line x 5 lines = 130 chars |
+Reads 12-bit ADC, maps 2.7V-4.2V LiPo range to 0-100%. Updated every 60 seconds.
 
-## Web Interface
+### Schematics
 
-Access at `http://192.168.4.1` (default AP: **E-Reader**, password: **12345678**)
+![Full Schematic (with SD card)](images/Schematic_kindle.png)
 
-| Page | Description |
-|------|-------------|
-| `/` | Upload and manage books (drag-and-drop) |
-| `/library` | Browse books with reading progress bars |
-| `/edit` | Rename books |
-| `/settings` | Dark mode, sleep timeout (UI only -- not yet implemented in firmware) |
-| `/bookmarks.html` | View all bookmarks grouped by book |
-| `/bookmark.html` | View text content of a specific bookmarked page |
+_Full circuit including SD card module_
+
+![Original Schematic (without SD)](images/Schematic_kindle_no_sd.png)
+
+_Original circuit — display and buttons only_
+
+---
+
+## Software Stack
+
+- **Arduino Framework** (ESP32 Arduino Core)
+- **GxEPD2** — e-paper display driver
+- **ESPAsyncWebServer** — async HTTP server
+- **Adafruit GFX** — font rendering
+- **LittleFS** — system files (settings, bookmarks, progress, web UI)
+- **SD Library** — book storage (built into ESP32 core)
+- **HTML/CSS/JavaScript** — web interface
+- **SPI communication** — shared bus between display and SD card
+
+---
+
+## Project Structure
+
+```bash
+.
+├── epaper-reader-esp32.ino    Main firmware sketch
+├── Arabi12pt7b.h              Generated Arabic font (Adafruit GFX format)
+├── generate_arabic_font.py    TTF-to-GFX font converter
+├── data/                      Web UI files (served from LittleFS)
+│   ├── index.html             Upload and manage books
+│   ├── library.html           Browse books with progress
+│   ├── edit.html              Rename books
+│   ├── settings.html          Device settings
+│   ├── bookmarks.html         View all bookmarks
+│   └── bookmark.html          View single bookmark content
+├── extractor_pipeline/        Book preparation utilities
+│   ├── pdftotextconversion/   PDF -> text extraction
+│   └── removeWhiteSpace/      Text cleaning + Arabic reshaping
+├── images/                    Project photos
+├── README.md
+└── images/Schematic_kindle.png   Circuit schematic
+```
+
+---
+
+## Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Link2004tw/esp32-epaper-display-reader.git
+```
+
+### 2. Open in Arduino IDE
+
+Install the following libraries via Library Manager:
+
+- **GxEPD2** (by Jean-Marc Zingg)
+- **ESPAsyncWebServer** (by me-no-dev)
+- **AsyncTCP** (by me-no-dev)
+
+Select the correct ESP32 board in Arduino IDE.
+
+### 3. Upload the Firmware
+
+Compile and flash the sketch to the ESP32.
+
+### 4. Upload Web UI Files
+
+Upload the `data/` folder to LittleFS:
+
+- Arduino IDE: Tools > ESP32 LittleFS Data Upload
+- The device AP will then serve the files at `http://192.168.4.1`
+
+### 5. Insert an SD Card
+
+Format as FAT32 (most cards ≤32GB come pre-formatted). Books are stored here — upload via the web UI after connecting to the device.
+
+### 6. Access the Web UI
+
+Connect to the device's WiFi AP (default: **E-Reader**, password: **12345678**) and open:
+
+```md
+http://192.168.4.1
+```
+
+| Page              | Description                             |
+| ----------------- | --------------------------------------- |
+| `/`               | Upload and manage books (drag-and-drop) |
+| `/library`        | Browse books with reading progress bars |
+| `/edit`           | Rename books                            |
+| `/settings`       | Dark mode toggle                        |
+| `/bookmarks.html` | View all bookmarks                      |
+| `/bookmark.html`  | View bookmarked page content            |
+
+---
 
 ## Controls
 
 ### Book List Screen
-- **UP**: Select previous book (at top item -> bookmarks)
+
+- **UP**: Select previous book (at top -> bookmarks)
 - **DOWN**: Select next book
 - **RIGHT**: Open selected book
 - **LEFT**: Open settings
 
 ### Reading Screen
+
 - **UP**: Previous page
 - **DOWN**: Next page
 - **RIGHT**: Next page
@@ -105,36 +229,41 @@ Access at `http://192.168.4.1` (default AP: **E-Reader**, password: **12345678**
 - **Long-press RIGHT**: Save bookmark
 
 ### Bookmarks Screen
+
 - **UP/DOWN**: Select bookmark
 - **RIGHT**: Open bookmarked page
 - **LEFT**: Return to book list
 - **Long-press DOWN**: Delete bookmark
 
 ### Settings Screen
+
 - **UP/DOWN**: Select setting
 - **RIGHT**: Change value
 - **LEFT**: Return to book list
 
-## Building
+---
 
-1. Install [ESP32 board support](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html)
-2. Install libraries via Arduino IDE Library Manager:
-   - GxEPD2
-   - ESPAsyncWebServer
-   - AsyncTCP
-3. Upload sketch to ESP32
-4. Upload `data/` folder to LittleFS:
-   - Using Arduino IDE: Tools > ESP32 LittleFS Data Upload
-   - Or via command line: `python mklittlefs.py -p 2264 0x1000 .data /tmp/littlefs.bin`
-   - ESP32 uploads at: `http://192.168.4.1/littlefs`
+## API Endpoints
+
+| Endpoint                | Method   | Description                |
+| ----------------------- | -------- | -------------------------- |
+| `/list`                 | GET      | List all books as JSON     |
+| `/download`             | GET      | Download a book file       |
+| `/delete`               | GET      | Delete a book              |
+| `/upload`               | POST     | Upload a book (multipart)  |
+| `/api/rename`           | POST     | Rename a book              |
+| `/api/progress`         | GET      | Get reading progress JSON  |
+| `/api/bookmarks`        | GET      | List bookmarks             |
+| `/api/bookmarks`        | DELETE   | Delete a bookmark          |
+| `/api/bookmark/content` | GET      | Get bookmark page text     |
+| `/api/settings`         | GET/POST | Get/update settings        |
+| `/api/buttons`          | GET      | Get physical button states |
+
+---
 
 ## Book Preparation Pipeline
 
-The `extractor_pipeline/` directory contains Python scripts for preparing books before uploading them to the device.
-
 ### PDF to Text
-
-Converts PDF books to plain text using `pdfminer.six`:
 
 ```bash
 cd extractor_pipeline/pdftotextconversion
@@ -142,24 +271,14 @@ pip install pdfminer.six
 python main.py
 ```
 
-Edit the `book_name` variable in `main.py` to match your PDF filename.
-
 ### Text Cleaning
-
-Strips HTML tags, collapses whitespace, and optionally removes English tokens (useful for extracting Arabic-only content from bilingual PDFs):
 
 ```bash
 cd extractor_pipeline/removeWhiteSpace
 python main.py
 ```
 
-Configure by editing the `clean_file()` call at the bottom of `main.py`:
-- `remove_inner_spaces=True` -- collapse multiple spaces
-- `remove_english=True` -- remove English tokens (for Arabic books)
-
-### Arabic Text Reshaping
-
-For Arabic books, reshape text from logical to visual display order (required because Arabic letters change shape based on position):
+### Arabic Reshaping
 
 ```bash
 pip install arabic-reshaper python-bidi
@@ -167,69 +286,40 @@ cd extractor_pipeline/removeWhiteSpace
 python reshape.py
 ```
 
-This reads `output.txt` and produces `book_processed.txt` ready for upload.
+---
 
-## Font Generation
+## Future Improvements
 
-The `generate_arabic_font.py` script converts a TTF font to Adafruit GFX format for use on the e-paper display.
+- EPUB support
+- Better UI navigation
+- Battery optimization
+- Custom enclosure
+- Sleep mode improvements
 
-```bash
-pip install freetype-py
-python generate_arabic_font.py <font.ttf> <size> <output.h>
-```
+---
 
-Example (already done -- produces `Arabi12pt7b.h`):
-```bash
-python generate_arabic_font.py font_extracted/NotoNaskhArabic/hinted/ttf/NotoNaskhArabic-Regular.ttf 12 Arabi12pt7b.h
-```
+## Challenges & Lessons Learned
 
-The generated font covers Unicode ranges U+0020-U+002A (basic ASCII punctuation) and U+0600-U+06FF (Arabic block).
+This project helped me learn about:
 
-## API Endpoints
+- Embedded systems development
+- SPI communication and bus sharing
+- Web servers on ESP32
+- Memory limitations
+- E-paper display handling
+- Hardware/software integration
+- Filesystem abstraction (SD + LittleFS)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/list` | GET | List all books as JSON |
-| `/download` | GET | Download book file |
-| `/delete` | GET | Delete a book |
-| `/upload` | POST | Upload a book (multipart form) |
-| `/api/rename` | POST | Rename a book |
-| `/api/progress` | GET | Get reading progress |
-| `/api/bookmarks` | GET | List bookmarks |
-| `/api/bookmarks` | DELETE | Delete bookmark |
-| `/api/settings` | GET/POST | Get/update settings |
-
-## Project Structure
-
-```
-epaper-reader-esp32/
-  epaper-reader-esp32.ino    Main firmware sketch (~1200 lines)
-  Arabi12pt7b.h              Generated Arabic font (Adafruit GFX format)
-  generate_arabic_font.py    Font conversion script (TTF -> GFX header)
-  data/                      Web UI files (served from LittleFS)
-    index.html               Upload and manage books
-    library.html             Browse books with progress
-    edit.html                Rename books
-    settings.html            Device settings
-    bookmarks.html           View all bookmarks
-    bookmark.html            View single bookmark content
-  extractor_pipeline/        Book preparation utilities
-    pdftotextconversion/     PDF -> text extraction
-    removeWhiteSpace/        Text cleaning + Arabic reshaping
-  README.md
-  Schematic_kindle.png       Circuit schematic
-```
-
-## Simulation
-
-The project includes a `.blu` file for [Wokwi](https://wokwi.com/) circuit simulation, allowing you to test the firmware in a browser without physical hardware.
+---
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
 
-## Acknowledgments
+See the `LICENSE` file for details.
 
-- [Noto Naskh Arabic](https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic) font by Google (SIL Open Font License 1.1)
-- [GxEPD2](https://github.com/ZinggJM/GxEPD2) e-paper display library
-- [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) async web server
+---
+
+## Author
+
+GitHub: Link2004tw
