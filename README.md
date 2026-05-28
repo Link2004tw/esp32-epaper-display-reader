@@ -4,7 +4,7 @@
 
 # ESP32 E-Paper Display Reader
 
-A portable ESP32-powered e-paper reading device with a web-based interface for transferring and reading text content. Books are stored on an SD card, with system files on internal flash.
+A portable ESP32-powered e-paper reading device with a web-based interface for transferring and reading text content. Books and system files are stored on the device's internal flash (LittleFS).
 
 ---
 
@@ -12,11 +12,10 @@ A portable ESP32-powered e-paper reading device with a web-based interface for t
 
 - ESP32-based system
 - 2.13" e-paper display (SSD1680, 122x250, B/W)
-- SD card storage for books (SPI mode, shared bus with display)
+- LittleFS storage for books on internal flash
 - Web UI for file transfer (upload/download/delete books)
 - Page navigation with physical buttons
 - Bookmarks and reading progress
-- Arabic / RTL text auto-detection and rendering
 - Dark mode toggle (device and web)
 - Battery monitoring (optional)
 - Lightweight and portable
@@ -43,7 +42,6 @@ _Screenshot placeholder — upload your own to `images/webui.png`_
 
 - **ESP32** (e.g. DevKit, C3, S3, etc.)
 - **E-paper display**: 2.13" DEPG0213BN (SSD1680, 122x250, B/W)
-- **SD card module** (SPI mode, shares bus with display)
 - **Buttons**: 4 tactile switches (UP, DOWN, LEFT, RIGHT)
 - **Battery module** (optional — LiPo via voltage divider on ADC)
 - Jumper wires / prototype board
@@ -56,10 +54,8 @@ _Screenshot placeholder — upload your own to `images/webui.png`_
 | Display DC   | 17   |                                    |
 | Display RST  | 16   |                                    |
 | Display BUSY | 4    |                                    |
-| Display SCK  | 18   | SPI (shared with SD)               |
-| Display MOSI | 23   | SPI (shared with SD)               |
-| SD Card CS   | 15   | SPI                                |
-| SD Card MISO | 19   | SPI (shared — display MISO unused) |
+| Display SCK  | 18   | SPI                                |
+| Display MOSI | 23   | SPI                                |
 | Button UP    | 12   | INPUT_PULLUP                       |
 | Button DOWN  | 13   | INPUT_PULLUP                       |
 | Button LEFT  | 14   | INPUT_PULLUP                       |
@@ -70,7 +66,7 @@ _Screenshot placeholder — upload your own to `images/webui.png`_
 
 ```
 ESP32 -> E-Paper Display
-------------------------------
+-----------------------------
 GPIO 5   -> CS
 GPIO 17  -> DC
 GPIO 16  -> RST
@@ -80,17 +76,8 @@ GPIO 23  -> MOSI
 GND      -> GND
 3V3      -> VCC
 
-ESP32 -> SD Card Module (SPI)
-------------------------------
-GPIO 18  -> SCK    (shared)
-GPIO 23  -> MOSI   (shared)
-GPIO 19  -> MISO
-GPIO 15  -> CS
-GND      -> GND
-5V       -> VCC    (or 3.3V depending on module regulator)
-
 ESP32 -> Buttons (to GND)
-------------------------------
+-----------------------------
 GPIO 12  -> UP button
 GPIO 13  -> DOWN button
 GPIO 14  -> LEFT button
@@ -107,15 +94,9 @@ Battery (+) -> 100K -> GPIO 32 -> 100K -> GND
 
 Reads 12-bit ADC, maps 2.7V-4.2V LiPo range to 0-100%. Updated every 60 seconds.
 
-### Schematics
+### Schematic
 
-![Full Schematic (with SD card)](images/Schematic_kindle.png)
-
-_Full circuit including SD card module_
-
-![Original Schematic (without SD)](images/Schematic_kindle_no_sd.png)
-
-_Original circuit — display and buttons only_
+![Circuit Schematic](images/Schematic_kindle_no_sd.png)
 
 ---
 
@@ -125,10 +106,8 @@ _Original circuit — display and buttons only_
 - **GxEPD2** — e-paper display driver
 - **ESPAsyncWebServer** — async HTTP server
 - **Adafruit GFX** — font rendering
-- **LittleFS** — system files (settings, bookmarks, progress, web UI)
-- **SD Library** — book storage (built into ESP32 core)
+- **LittleFS** — all storage (books, settings, bookmarks, progress, web UI)
 - **HTML/CSS/JavaScript** — web interface
-- **SPI communication** — shared bus between display and SD card
 
 ---
 
@@ -137,8 +116,6 @@ _Original circuit — display and buttons only_
 ```bash
 .
 ├── epaper-reader-esp32.ino    Main firmware sketch
-├── Arabi12pt7b.h              Generated Arabic font (Adafruit GFX format)
-├── generate_arabic_font.py    TTF-to-GFX font converter
 ├── data/                      Web UI files (served from LittleFS)
 │   ├── index.html             Upload and manage books
 │   ├── library.html           Browse books with progress
@@ -147,11 +124,10 @@ _Original circuit — display and buttons only_
 │   ├── bookmarks.html         View all bookmarks
 │   └── bookmark.html          View single bookmark content
 ├── extractor_pipeline/        Book preparation utilities
-│   ├── pdftotextconversion/   PDF -> text extraction
-│   └── removeWhiteSpace/      Text cleaning + Arabic reshaping
+│   └── pdftotextconversion/   PDF -> text extraction
 ├── images/                    Project photos
 ├── README.md
-└── images/Schematic_kindle.png   Circuit schematic
+└── images/Schematic_kindle_no_sd.png   Circuit schematic
 ```
 
 ---
@@ -183,13 +159,8 @@ Compile and flash the sketch to the ESP32.
 Upload the `data/` folder to LittleFS:
 
 - Arduino IDE: Tools > ESP32 LittleFS Data Upload
-- The device AP will then serve the files at `http://192.168.4.1`
 
-### 5. Insert an SD Card
-
-Format as FAT32 (most cards ≤32GB come pre-formatted). Books are stored here — upload via the web UI after connecting to the device.
-
-### 6. Access the Web UI
+### 5. Access the Web UI
 
 Connect to the device's WiFi AP (default: **E-Reader**, password: **12345678**) and open:
 
@@ -275,14 +246,6 @@ cd extractor_pipeline/removeWhiteSpace
 python main.py
 ```
 
-### Arabic Reshaping
-
-```bash
-pip install arabic-reshaper python-bidi
-cd extractor_pipeline/removeWhiteSpace
-python reshape.py
-```
-
 ---
 
 ## Future Improvements
@@ -292,6 +255,7 @@ python reshape.py
 - Battery optimization
 - Custom enclosure
 - Sleep mode improvements
+- Arabic / RTL text support
 
 ---
 
@@ -305,7 +269,7 @@ This project helped me learn about:
 - Memory limitations
 - E-paper display handling
 - Hardware/software integration
-- Filesystem abstraction (SD + LittleFS)
+- LittleFS filesystem storage
 
 ---
 

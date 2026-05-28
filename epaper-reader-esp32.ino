@@ -29,14 +29,10 @@
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
-#include "Arabi12pt7b.h"
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
-#include <SD.h>
-
 #define CS_PIN   5
-#define SD_CS_PIN 15
 #define DC_PIN   17
 #define RES_PIN  16
 #define BUSY_PIN 4
@@ -81,8 +77,6 @@ int    selectedIndex = 0;
 
 // ---------- Settings ----------
 bool darkMode = false;
-bool arabicMode = false;
-bool sdAvailable = false;
 
 // ---------- Battery ----------
 int           batteryPercent    = 100;
@@ -139,10 +133,8 @@ void loadSettings() {
     int sep = line.indexOf('|');
     if (sep > 0) {
       darkMode = (line.substring(0, sep) == "dark");
-      arabicMode = (line.substring(sep + 1).toInt() == 1);
     } else {
       darkMode = (line == "dark");
-      arabicMode = false;
     }
     f.close();
   }
@@ -152,44 +144,8 @@ void saveSettings() {
   File f = LittleFS.open("/settings.txt", "w");
   if (f) {
     f.print(darkMode ? "dark" : "light");
-    f.print("|");
-    f.println(arabicMode ? "1" : "0");
     f.close();
   }
-}
-
-// ============================================================
-//  Arabic text detection
-// ============================================================
-// Detect Arabic (check for UTF-8 Arabic encoding bytes)
-// ============================================================
-bool detectArabicText(const String& text, int checkLen) {
-  int arabicCount = 0;
-  int check = min((int)text.length(), checkLen);
-  for (int i = 0; i < check; i++) {
-    unsigned char c = (unsigned char)text.charAt(i);
-    // UTF-8 Arabic: D9 xx, DA xx, DB xx (first byte of 2-byte sequences)
-    if (c == 0xD9 || c == 0xDA || c == 0xDB) {
-      arabicCount++;
-      if (i + 1 < check) i++; // Skip second byte if available
-    }
-  }
-  // Lower threshold: 10% Arabic
-  return (arabicCount * 3 >= check);
-}
-
-// Get first page content for Arabic detection
-bool detectArabicBook(const String& filename) {
-  File f = openBookFile("/" + filename, "r");
-  if (!f) return false;
-  String sample = "";
-  for (int i = 0; i < 500 && f.available(); i++) {
-    char c = f.read();
-    if (c >= ' ') sample += c;  // Skip control chars
-  }
-  f.close();
-  // Lower threshold: if just 10% Arabic bytes, enable RTL
-  return detectArabicText(sample, 500);
 }
 
 // ============================================================
@@ -342,22 +298,18 @@ bool isSystemFile(const String& name) {
 }
 
 // ============================================================
-//  File helpers (SD primary, LittleFS fallback)
+//  File helpers
 // ============================================================
 File openBookFile(const String& path, const char* mode) {
-  if (sdAvailable) {
-    File f = SD.open(path, mode);
-    if (f) return f;
-  }
   return LittleFS.open(path, mode);
 }
 
 // ============================================================
-//  Book list (SD primary, LittleFS fallback)
+//  Book list
 // ============================================================
 void loadBookList() {
   bookCount = 0;
-  File root = sdAvailable ? SD.open("/") : LittleFS.open("/");
+  File root = LittleFS.open("/");
   File f    = root.openNextFile();
   while (f && bookCount < MAX_BOOKS) {
     String name = String(f.name());
@@ -400,12 +352,9 @@ int      lastSettingsSel     = -1;
 String   lastCurrentBook     = "";
 int      lastCurrentPage     = -1;
 bool     lastDarkMode        = false;
-bool     lastArabicMode     = false;
-
 bool needsRedraw() {
   if (lastAppState != appState)       return true;
   if (lastDarkMode != darkMode)       return true;
-  if (lastArabicMode != arabicMode)   return true;
   if (appState == STATE_LIST     && lastSelectedIndex  != selectedIndex)      return true;
   if (appState == STATE_BOOKMARKS && lastSelectedBkmk  != selectedBookmark)   return true;
   if (appState == STATE_SETTINGS) {
@@ -421,7 +370,6 @@ bool needsRedraw() {
 void updateDrawState() {
   lastAppState       = appState;
   lastDarkMode       = darkMode;
-  lastArabicMode   = arabicMode;
   lastSelectedIndex  = selectedIndex;
   lastSelectedBkmk   = selectedBookmark;
   lastSettingsSel    = settingsSelectedIndex;
@@ -584,21 +532,9 @@ void drawSettings() {
     display.print(darkMode ? "ON " : "OFF");
     display.setTextColor(fg);
 
-    // Row 1: Arabic mode
-    int y1 = 35 + ROW_H;
+    // Row 1: Apply / back
+    int y2 = 35 + ROW_H;
     if (settingsSelectedIndex == 1) {
-      display.fillRect(0, y1 - 12, SCREEN_W, ROW_H, fg);
-      display.setTextColor(bg);
-    }
-    display.setCursor(4, y1);
-    display.print("Arabic:");
-    display.setCursor(SCREEN_W - 30, y1);
-    display.print(arabicMode ? "ON " : "OFF");
-    display.setTextColor(fg);
-
-    // Row 2: Apply / back
-    int y2 = 35 + ROW_H * 2;
-    if (settingsSelectedIndex == 2) {
       display.fillRect(0, y2 - 12, SCREEN_W, ROW_H, fg);
       display.setTextColor(bg);
     }
@@ -687,7 +623,6 @@ void drawReadingPage() {
   if (title.endsWith(".txt")) title = title.substring(0, title.length() - 4);
   if (title.length() > 16) title = title.substring(0, 14) + "..";
   String pageStr = "(" + String(currentPage) + "/" + String(totalPages) + ")";
-  if (arabicMode) pageStr = "(RTL) " + pageStr;
 
   // Cache page content before display loop (avoids SPI conflicts)
   String pageContent = "";
@@ -712,8 +647,7 @@ void drawReadingPage() {
     display.fillScreen(bg);
     drawScreenHeader(title.c_str(), pageStr);
 
-    if (arabicMode) display.setFont(&Arabi12pt7b);
-    else display.setFont(&FreeMono9pt7b);
+    display.setFont(&FreeMono9pt7b);
     display.setTextColor(fg);
 
     int16_t tbx, tby;
@@ -729,9 +663,8 @@ void drawReadingPage() {
       display.getTextBounds("AB",  0, 0, &sx, &sy, &nsw, &nsh);
       int spaceWidth = sw - nsw;
 
-      int cursorX  = arabicMode ? (SCREEN_W - 4) : 4;
+      int cursorX  = 4;
       const int maxX  = SCREEN_W - 4;
-      const int minX  = 4;
       int cursorY = CONTENT_Y_START;
       String word = "";
       int    pos  = 0;
@@ -743,25 +676,17 @@ void drawReadingPage() {
           if (word.length() > 0) {
             display.getTextBounds(word, 0, 0, &tbx, &tby, &tbw, &tbh);
             int wordWidth = tbw + spaceWidth;
-            if (arabicMode) {
-              if (cursorX - wordWidth < minX) {
-                cursorX = SCREEN_W - 4; cursorY += LINE_HEIGHT;
-                if (cursorY > CONTENT_MAX_Y) break;
-              }
-            } else {
-              if (cursorX + wordWidth > maxX) {
-                cursorX = 4; cursorY += LINE_HEIGHT;
-                if (cursorY > CONTENT_MAX_Y) break;
-              }
+            if (cursorX + wordWidth > maxX) {
+              cursorX = 4; cursorY += LINE_HEIGHT;
+              if (cursorY > CONTENT_MAX_Y) break;
             }
             display.setCursor(cursorX, cursorY);
             display.print(word);
-            if (arabicMode) cursorX -= wordWidth;
-            else cursorX += wordWidth;
+            cursorX += wordWidth;
             word = "";
           }
           if (c == '\n') {
-            cursorX = arabicMode ? (SCREEN_W - 4) : 4;
+            cursorX = 4;
             cursorY += LINE_HEIGHT;
             if (cursorY > CONTENT_MAX_Y) break;
           }
@@ -769,21 +694,13 @@ void drawReadingPage() {
           word += c;
           if ((int)word.length() > CHARS_PER_LINE) {
             display.getTextBounds(word, 0, 0, &tbx, &tby, &tbw, &tbh);
-            if (arabicMode) {
-              if (cursorX - (int)tbw < minX) {
-                cursorX = SCREEN_W - 4; cursorY += LINE_HEIGHT;
-                if (cursorY > CONTENT_MAX_Y) break;
-              }
-            } else {
-              if (cursorX + (int)tbw > maxX) {
-                cursorX = 4; cursorY += LINE_HEIGHT;
-                if (cursorY > CONTENT_MAX_Y) break;
-              }
+            if (cursorX + (int)tbw > maxX) {
+              cursorX = 4; cursorY += LINE_HEIGHT;
+              if (cursorY > CONTENT_MAX_Y) break;
             }
             display.setCursor(cursorX, cursorY);
             display.print(word);
-            if (arabicMode) cursorX -= tbw;
-            else cursorX += tbw;
+            cursorX += tbw;
             word = "";
           }
         }
@@ -812,7 +729,6 @@ void openBook(const String& filename) {
   currentPage = loadProgress(filename);
   if (currentPage > totalPages) currentPage = totalPages;
   if (currentPage < 1)          currentPage = 1;
-  arabicMode = detectArabicBook(filename);
   drawReadingPage();
 }
 
@@ -895,13 +811,8 @@ void setupServer() {
     if (!req->hasParam("name")) { req->send(400, "text/plain", "Missing name"); return; }
     String name = req->getParam("name")->value();
     if (isSystemFile(name)) { req->send(403, "text/plain", "Forbidden"); return; }
-    if (sdAvailable) {
-      if (!SD.exists("/" + name)) { req->send(404, "text/plain", "Not found"); return; }
-      req->send(SD, "/" + name, "text/plain");
-    } else {
-      if (!LittleFS.exists("/" + name)) { req->send(404, "text/plain", "Not found"); return; }
-      req->send(LittleFS, "/" + name, "text/plain");
-    }
+    if (!LittleFS.exists("/" + name)) { req->send(404, "text/plain", "Not found"); return; }
+    req->send(LittleFS, "/" + name, "text/plain");
   });
 
   server.on("/api/progress", HTTP_GET, [](AsyncWebServerRequest *req) {
@@ -928,7 +839,7 @@ void setupServer() {
 
   server.on("/list", HTTP_GET, [](AsyncWebServerRequest *req) {
     String json = "[";
-    File root = sdAvailable ? SD.open("/") : LittleFS.open("/");
+    File root = LittleFS.open("/");
     File file = root.openNextFile();
     bool first = true;
     while (file) {
@@ -955,8 +866,7 @@ void setupServer() {
       int ts = body.indexOf("\"to\":\"")   + 6, te = body.indexOf("\"", ts);
       String from = body.substring(fs, fe), to = body.substring(ts, te);
       if (from.length() > 0 && to.length() > 0) {
-        if (sdAvailable) SD.rename("/" + from, "/" + to);
-        else LittleFS.rename("/" + from, "/" + to);
+        LittleFS.rename("/" + from, "/" + to);
         loadBookList();
         drawBookList();
       }
@@ -969,8 +879,7 @@ void setupServer() {
       static File uploadFile;
       if (!index) {
         Serial.println("Uploading: " + filename);
-        uploadFile = sdAvailable ? SD.open("/" + filename, "w")
-                                 : LittleFS.open("/" + filename, "w");
+        uploadFile = LittleFS.open("/" + filename, "w");
       }
       if (uploadFile) uploadFile.write(data, len);
       if (final) {
@@ -992,8 +901,7 @@ void setupServer() {
     if (!req->hasParam("name")) { req->send(400, "text/plain", "Missing name"); return; }
     String name = req->getParam("name")->value();
     if (isSystemFile(name)) { req->send(403, "text/plain", "Forbidden"); return; }
-    if (sdAvailable) SD.remove("/" + name);
-    else LittleFS.remove("/" + name);
+    LittleFS.remove("/" + name);
     loadBookList();
     drawBookList();
     req->send(200, "text/plain", "Deleted");
@@ -1095,10 +1003,12 @@ static void commonInit() {
   pinMode(BTN_LEFT,  INPUT_PULLUP);
   pinMode(BTN_RIGHT, INPUT_PULLUP);
 
+  pinMode(CS_PIN, OUTPUT);
+  digitalWrite(CS_PIN, HIGH);
+
   LittleFS.begin(true);
+
   display.init(115200, true, 50, false);
-  sdAvailable = SD.begin(SD_CS_PIN);
-  if (!sdAvailable) Serial.println("SD init failed");
   initBattery();
   batteryPercent    = readBattery();
   lastBatteryUpdate = millis();
@@ -1197,20 +1107,16 @@ void loop() {
 
   } else if (appState == STATE_SETTINGS) {
     if (shortUp) {
-      settingsSelectedIndex = (settingsSelectedIndex - 1 + 3) % 3;
+      settingsSelectedIndex = (settingsSelectedIndex - 1 + 2) % 2;
       drawSettings();
     }
     if (shortDown) {
-      settingsSelectedIndex = (settingsSelectedIndex + 1) % 3;
+      settingsSelectedIndex = (settingsSelectedIndex + 1) % 2;
       drawSettings();
     }
     if (shortRight) {
       if (settingsSelectedIndex == 0) {
         darkMode = !darkMode;
-        saveSettings();
-        drawSettings();
-      } else if (settingsSelectedIndex == 1) {
-        arabicMode = !arabicMode;
         saveSettings();
         drawSettings();
       } else {

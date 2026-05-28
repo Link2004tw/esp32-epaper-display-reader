@@ -48,7 +48,7 @@ https://youtube.com/your-demo
 - ESP32
 - E-paper display
 - Battery module (if applicable)
-- SD card module (planned)
+- LittleFS storage on internal flash
 - Jumper wires / prototype board
 
 ---
@@ -103,7 +103,7 @@ http://<device-ip>
 
 ## Future Improvements
 
-- SD card support
+
 - EPUB support
 - Better UI navigation
 - Battery optimization
