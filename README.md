@@ -32,9 +32,10 @@ A portable ESP32-powered e-paper reading device with a web-based interface for t
 
 ### Web Interface
 
-![Web UI](images/webui.png)
-
-_Screenshot placeholder — upload your own to `images/webui.png`_
+![Home Page](images/home_page.png)
+![Library Page](images/library_page.png)
+![Bookmark Page](images/bookmark_page.png)
+![Rename Page](images/rename_page.png)
 
 ---
 
@@ -256,6 +257,13 @@ python main.py
 - Custom enclosure
 - Sleep mode improvements
 - Arabic / RTL text support
+
+---
+
+## Current Limitations
+
+The initial SD card implementation was removed temporarily due to stability and compatibility issues.
+Future revisions may reintroduce external storage with improved power handling and filesystem support.
 
 ---
 
